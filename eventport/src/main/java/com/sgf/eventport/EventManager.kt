@@ -4,12 +4,13 @@ import android.util.Log
 import java.lang.ref.WeakReference
 
 class EventManager {
+
     private val eventObjMapping = mutableMapOf<String, WeakReference<Any>>()
+
     private var eventMapping : EventMapping? = null
 
     companion object {
         private const val TAG = "EventManager"
-        private const val RECEIVE_EVENT_MANAGER_PACKAGE = "com.sgf.eventport.ReceiveEventMapManger"
         val instance by lazy(LazyThreadSafetyMode.NONE) {
             EventManager()
         }
@@ -23,7 +24,19 @@ class EventManager {
         }
     }
 
-    fun <T> findEventInterfaceList(eventClass : Class<T>): List<T> {
+    fun unregisterEvent(obj: Any) {
+        val key = obj::class.java.name
+        if (eventObjMapping.containsKey(key)) {
+            eventObjMapping.remove(key)?.clear()
+        }
+    }
+
+    fun findEvent(key : String) : Any? {
+        Log.d(TAG,"findEvent key: $key" )
+        return eventObjMapping[key]?.get()
+    }
+
+    fun <T> findEventInterfaceList(eventClass : Class<T>): List<T>? {
         loadEventMappingIfNeed()
         val receiveClassNameList = eventMapping?.getMultiReceive(eventClass.name)
         val anyList = mutableListOf<T>()
@@ -50,9 +63,9 @@ class EventManager {
     private fun loadEventMappingIfNeed() {
         if (eventMapping == null) {
             try {
-                eventMapping = Class.forName(RECEIVE_EVENT_MANAGER_PACKAGE).newInstance() as EventMapping?
+                eventMapping = Class.forName("com.cfox.fastevent.ReceiveEventMapManger").newInstance() as EventMapping?
             } catch (e : Exception) {
-                Log.e(TAG, "create proxy class fail , proxy name :$RECEIVE_EVENT_MANAGER_PACKAGE" )
+                Log.e(TAG, "create proxy class fail , proxy name  :com.cfox.fastevent.ReceiveEventMapManger" )
             }
         }
     }
